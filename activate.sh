@@ -1,3 +1,2 @@
-#!/bin/bash
-source ~/projects/python/bestoon/.env/bin/activate
-source ~/projects/python/django_bash_completion.sh
+source ../.env/bin/activate
+source ../../django_bash_completion.sh
