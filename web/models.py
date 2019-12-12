@@ -6,7 +6,7 @@ class Token(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     token = models.CharField(max_length=128)
     def __str__(self):
-        return self.user.username
+        return "{}_token".format(self.user)
 
 
 class Expense(models.Model):
