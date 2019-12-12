@@ -24,3 +24,20 @@ def submit_expense(request):
         'status': True
     }, encoder=json.JSONEncoder)
     # return HttpResponse('we are here')
+
+@csrf_exempt
+def submit_income(request):
+    # TODO; validation form
+    this_token = request.POST['token']
+    this_user = User.objects.filter(token__token=this_token)[0]
+    if 'date' in request.POST:
+        date = request.POST['date']
+    else:
+        date = timezone.now()
+    Income.objects.create(user=this_user, amount=request.POST['amount'], text=request.POST['text'],
+                           date=date)
+
+    return JsonResponse({
+        'status': True
+    }, encoder=json.JSONEncoder)
+    # return HttpResponse('we are here')
