@@ -10,14 +10,28 @@ from django.utils.crypto import get_random_string
 from .utils import grecaptcha_verify, RateLimited
 import random
 import string
+from django.db.models import Sum, Count
 
 random_str = lambda N: ''.join(
     random.SystemRandom().choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(N))
 
 
+@csrf_exempt
+def generalstat(request):
+    this_token = request.POST['token']
+    this_user = User.objects.filter(token__token=this_token).get()
+    income = Income.objects.filter(user=this_user).aggregate(Count('amount'), Sum('amount'))
+    expense = Expense.objects.filter(user=this_user).aggregate(Count('amount'), Sum('amount'))
+    context = {}
+    context['expense'] = expense
+    context['income'] = income
+    return JsonResponse(context, encoder=json.JSONEncoder)
+
+
 def index(request):
     context = {}
     return render(request, 'index.html', context)
+
 
 def register(request):
     if 'requestcode' in request.POST:
@@ -51,22 +65,22 @@ def register(request):
             # TODO: keep the form data
             return render(request, 'register.html', context)
     elif 'code' in request.GET:  # user clicked on code
-            code = request.GET['code']
-            if Passwordresetcodes.objects.filter(code=code).exists():
-                new_temp_user = Passwordresetcodes.objects.get(code=code)
-                newuser = User.objects.create(username=new_temp_user.username, password=new_temp_user.password,
-                                              email=new_temp_user.email)
-                this_token = get_random_string(length=48)
-                token = Token.objects.create(user=newuser, token=this_token)
-                Passwordresetcodes.objects.filter(code=code).delete()
-                context = {
-                    'message': 'اکانت شما ساخته شد. توکن شما {} است. آن را ذخیره کنید چون دیگر نمایش داده نخواهد شد! جدی!'.format(
-                        this_token)}
-                return render(request, 'index.html', context)
-            else:
-                context = {
-                    'message': 'این کد فعال سازی معتبر نیست. در صورت نیاز دوباره تلاش کنید'}
-                return render(request, 'register.html', context)
+        code = request.GET['code']
+        if Passwordresetcodes.objects.filter(code=code).exists():
+            new_temp_user = Passwordresetcodes.objects.get(code=code)
+            newuser = User.objects.create(username=new_temp_user.username, password=new_temp_user.password,
+                                          email=new_temp_user.email)
+            this_token = get_random_string(length=48)
+            token = Token.objects.create(user=newuser, token=this_token)
+            Passwordresetcodes.objects.filter(code=code).delete()
+            context = {
+                'message': 'اکانت شما ساخته شد. توکن شما {} است. آن را ذخیره کنید چون دیگر نمایش داده نخواهد شد! جدی!'.format(
+                    this_token)}
+            return render(request, 'index.html', context)
+        else:
+            context = {
+                'message': 'این کد فعال سازی معتبر نیست. در صورت نیاز دوباره تلاش کنید'}
+            return render(request, 'register.html', context)
     else:
         context = {'message': ''}
         return render(request, 'register.html', context)
